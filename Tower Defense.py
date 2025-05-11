@@ -1,3 +1,9 @@
+# Made by
+
+# 22301068 - Mushfique Tajwar
+# 22301130 - Aryan Rayeen Rahman
+# 22301327 - Md. Obaidullah Ahrar
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
