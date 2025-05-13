@@ -11,49 +11,65 @@ import math
 import random
 
 # Setup
-GRID_LENGTH = 1500
-region = 600
-castle_region = 250
+GRID_LENGTH       = 1500
+region            = 600
+castle_region     = 250
 # Camera
-camera_position, camera_angle = (0, 600, 600), 0
-camera_distance, camera_height = 600, 550
-camera_min_height, camera_max_height = 400, 1400
+camera_position   = (0, 600, 600)
+camera_angle      = 0
+camera_distance   = 600
+camera_height     = 550
+camera_min_height = 400
+camera_max_height = 1400
 # Flags
-game_end, first_person_view, cheat, v_enable = False, False, False, False
-round_pause = False
+cheat             = False
+v_enable          = False
+game_end          = False
+round_pause       = False
 round_choice_made = False
+first_person_view = False
 # Player
-player_position, gun_rotation = [0, 0, 0], 180
-player_speed, player_rotation, player_health, player_max_health, player_score = 10, 5, 100, 100, 0
+player_position   = [0, 0, 0]
+player_speed      = 10
+player_score      = 0
+player_health     = 100
+player_rotation   = 5
+player_max_health = 100
 # Gun
-shots, misses, max_miss, gun_position = [], 0, 50, [30, 15, 80]
+gun_rotation      = 180
+gun_position      = [30, 15, 80]
+shots             = []
+misses            = 0
+max_miss          = 50
 # Target
-target_pulse, target_pulse_t = 1.0, 0
+targets           = []
+target_number     = 5
+target_speed      = 0.025
+target_pulse      = 1.0
+target_pulse_t    = 0
+enemy_count_per_round = [5, 7, 9, 11, 13, 15, 17, 19, 21]
 # Enemy shots
-enemy_shots = []
-enemy_shot_cooldown = 300
-enemy_shot_timer = {}
+enemy_shots       = []
+enemy_shot_timer  = {}
 enemy_shot_damage = 1
-
+enemy_shot_cooldown = 300
 # Tower shots
-tower_shots = []
-tower_shot_cooldown = 200
+towers            = []
+tower_shots       = []
 tower_shot_timers = {}
-tower_shot_range = 600
+tower_shot_range  = 600
 tower_shot_damage = 3
+tower_shot_cooldown = 200
 
-current_round = 1
-castle_radius = 60
-enemies_killed = 0
-kills_to_advance = 10
+current_round     = 1
+castle_radius     = 60
+enemies_killed    = 0
+kills_to_advance  = 10
 
-towers = []
 tower_placement_mode = False
 placement_marker_position = [400, 400]
-
 GLUT_BITMAP_HELVETICA_18 = GLUT_BITMAP_HELVETICA_18
-targets, target_speed, target_number = [], 0.025, 5
-enemy_count_per_round = [5, 7, 9, 11, 13, 15]
+tree_count = 0
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18, color=(1, 1, 1)):
     glColor3f(color[0], color[1], color[2])
@@ -76,12 +92,15 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18, color=(1, 1, 1)):
 def draw_shapes():
     arena()
     castle()
+    draw_trees()
     for tx, ty in towers:
         glPushMatrix()
         glTranslatef(tx, ty, 10)
+
         # Base Cylinder Tower
         glColor3f(0.5, 0.5, 0.5)
         gluCylinder(gluNewQuadric(), 40, 45, 180, 20, 20)
+
         # Top Battlements
         glTranslatef(0, 0, 180)
         for i in range(8):
@@ -95,9 +114,11 @@ def draw_shapes():
             glScalef(1, 1, 1.5)
             glutSolidCube(15)
             glPopMatrix()
+
         # Flagpole
         glColor3f(0.6, 0.3, 0.1)
         gluCylinder(gluNewQuadric(), 1.5, 1.5, 40, 10, 10)
+
         # Flag
         glTranslatef(0, 0, 40)
         glColor3f(1, 0, 0)
@@ -107,6 +128,7 @@ def draw_shapes():
         glVertex3f(0, 16, 0)
         glEnd()
         glPopMatrix()
+
     if not game_end:
         for t in targets:
             enemies(*t)
@@ -131,6 +153,8 @@ def arena():
             glVertex3f(i + 100, j + 100, 0)
             glVertex3f(i, j + 100, 0)
     glEnd()
+
+    # Draw conquered region
     glBegin(GL_QUADS)
     for i in range(-region, region + 1, 100):
         for j in range(-region, region + 1, 100):
@@ -143,6 +167,8 @@ def arena():
             glVertex3f(i + 100, j + 100, 2)
             glVertex3f(i, j + 100, 2)
     glEnd()
+
+    # Draw castle region
     glBegin(GL_QUADS)
     for i in range(-castle_region, castle_region, 100):
         for j in range(-castle_region, castle_region, 100):
@@ -156,6 +182,7 @@ def arena():
             glVertex3f(i, j + 100, 9)
     glEnd()
     # Boundary
+
     glBegin(GL_QUADS)
     glColor3f(0, 0, 0)
 
@@ -203,18 +230,20 @@ def arena():
     glVertex3f(GRID_LENGTH + 100, -GRID_LENGTH, 100)
     glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 100)
     glEnd()
+
+def draw_trees():
     rng = random.Random(42)
     tree_count = 70
-    for _ in range(tree_count):
+    for i in range(tree_count):
         x = rng.randint(-GRID_LENGTH + 200, GRID_LENGTH - 200)
         y = rng.randint(-GRID_LENGTH + 200, GRID_LENGTH - 200)
         if math.sqrt(x**2 + y**2) >= 500:
             glPushMatrix()
             glTranslatef(x, y, 0)
-            glColor3f(0.4, 0.2, 0.1)
+            glColor3f(0.4*i/70, 0.2*i/70, 0.1)
             gluCylinder(gluNewQuadric(), 12, 12, 70, 10, 10)
             glTranslatef(0, 0, 70)
-            glColor3f(0.0, 0.6, 0.0)
+            glColor3f(0.0, 0.6*i/70, 0.0)
             gluSphere(gluNewQuadric(), 40, 15, 15)
             glPopMatrix()
 
@@ -306,6 +335,16 @@ def castle():
     glRotatef(0, 1, 0, 0)
     glColor3f(0.95, 0.85, 0.75)
     gluCylinder(gluNewQuadric(), 4, 8, 50, 10, 10)
+    # Hat
+    glColor3f(1, 1, 0)
+    glTranslatef(25, 0, 87)
+    glutSolidCone(12, 40, 16, 16)  # Base radius = 12, height = 40
+    glTranslatef(-10, -15, -17)
+    glColor3f(0, 0, 0)
+    gluSphere(gluNewQuadric(), 5, 12, 12)
+    glTranslatef(20, 0, 0)
+    glColor3f(0, 0, 0)
+    gluSphere(gluNewQuadric(), 5, 12, 12)
     glPopMatrix()
 
 def spawn_tower():
@@ -321,7 +360,7 @@ def enemies(x, y, z):
     if not round_pause:
         glScalef(target_pulse, target_pulse, target_pulse)
     # Lower Body (Upside-down Cone)
-    glColor3f(0, 0, 1)  # Blue color for the lower body
+    glColor3f(0, 0, abs(target_pulse))
     glPushMatrix()
     glTranslatef(0,0,35)
     glRotatef(180, 1, 0, 0)  # Rotate the cone upside down
@@ -402,7 +441,7 @@ def gun_shot_check():
     for s in to_remove:
         if s in shots:
             shots.remove(s)
-    if misses >= max_miss and not cheat:
+    if misses >= max_miss:
         game_end = True
 
 def enemy_shoot(x, y, z):
@@ -435,7 +474,7 @@ def update_enemies():
                     random.randint(-30, 30)
         if dist < 50:
             if not cheat:
-                player_health -= 1
+                player_health -= 5
                 if player_health <= 0:
                     game_end = True
                     targets.clear()
@@ -588,10 +627,12 @@ def crosshair():
         glLoadIdentity()
         glColor3f(0, 0, 0)
         glBegin(GL_LINES)
-        glVertex2f(400 - 10, 325)
-        glVertex2f(400 + 10, 325)
-        glVertex2f(400, 325 - 10)
-        glVertex2f(400, 325 + 10)
+        glVertex2f(400, 340)
+        glVertex2f(400, 310)
+        glVertex2f(380, 325)
+        glVertex2f(400, 340)
+        glVertex2f(420, 325)
+        glVertex2f(400, 340)
         glEnd()
         glPopMatrix()
         glMatrixMode(GL_PROJECTION)
@@ -599,18 +640,20 @@ def crosshair():
         glMatrixMode(GL_MODELVIEW)
 
 def spawn_enemies(count=target_number):
-    global targets
+    global targets, n
     max_enemies = enemy_count_per_round[current_round - 1] if current_round <= len(enemy_count_per_round) else 15
     if len(targets) + count > max_enemies:
         count = max(0, max_enemies - len(targets))
+    if current_round < 4:
+        n = current_round
     for _ in range(count):
         x = random.uniform(-region + 50, region - 50)
         y = random.uniform(-region + 50, region - 50)
         z = random.uniform(0, 10)
         while abs(x) < 200:
-            x = random.uniform(-region + 100, region - 100)
+            x = random.uniform(-region + (100*n), region - 100)
         while abs(y) < 200:
-            y = random.uniform(-region + 100, region - 100)
+            y = random.uniform(-region + (100*n), region - 100)
         targets.append([x, y, z])
 
 def update_enemy_shots():
@@ -656,7 +699,6 @@ def next_round():
         target_number = enemy_count_per_round[current_round-1]
     else:
         target_number = enemy_count_per_round[-1] + 2 * (current_round - len(enemy_count_per_round))
-    spawn_enemies(target_number)
 
 def reset_game():
     global game_end, first_person_view, cheat, v_enable, misses, region, towers, target_speed, current_round
@@ -681,7 +723,6 @@ def keyboardListener(key, x, y):
     global cheat, first_person_view, game_end, v_enable, gun_rotation,camera_position, camera_angle
     global player_position, player_speed, player_rotation, player_health, player_max_health, player_score, misses
     global round_pause, round_choice_made, towers, tower_shot_timers, tower_placement_mode, placement_marker_position
-
     if round_pause:
         if tower_placement_mode:
             if key == b's' and placement_marker_position[1] < region - 50:
@@ -704,13 +745,13 @@ def keyboardListener(key, x, y):
                     first_person_view = not first_person_view
                     v_enable = first_person_view
                     player_rotation = 2.5 if first_person_view else 5
-                else:
-                    print("Cannot place a tower inside the castle region!")
+                    spawn_enemies(target_number)
+                    
             return
 
         if key == b'1':
-            if current_round < 5:
-                player_max_health += 100
+            spawn_enemies(target_number)
+            player_max_health += 100
             player_health = player_max_health
             round_pause = False
             round_choice_made = True
@@ -718,8 +759,9 @@ def keyboardListener(key, x, y):
         elif key == b'2':
             if current_round > 4:
                 round_choice_made = True
+                return
             tower_placement_mode = True
-            placement_marker_position = [400, 400]  # Reset marker to the center
+            placement_marker_position = [400, 400]
             first_person_view = not first_person_view
             v_enable = first_person_view
             player_rotation = 2.5 if first_person_view else 5
@@ -796,6 +838,7 @@ def idle():
     global player_score
     enemy_pulse()
     if round_pause:
+        targets.clear()
         glutPostRedisplay()
         return
     if not game_end:
@@ -849,20 +892,22 @@ def showScreen():
             glutSolidSphere(20, 16, 16)
             glPopMatrix()
             draw_text(200, 400, "Use W, A, S, D to move the marker", color=(1, 1, 0))
-            draw_text(200, 350, "Press Enter to place the tower", color=(0, 1, 0))
+            draw_text(200, 350, "Press Enter to place the tower (Can't place on white tiles)", color=(0, 1, 0))
         else:
             if current_round < 5:
-                draw_text(200, 400, f"Round {current_round-1} Completed! More region conquered", color=(1, 1, 0))
+                draw_text(200, 400, f"Round {current_round-1} Completed! More region conquered and health restored.", color=(1, 1, 0))
                 draw_text(200, 350, "Choose your reward:", color=(1, 0.7, 0.2))
-                draw_text(200, 300, "Press [1] to increase health by 100", color=(0, 1, 0))
-                draw_text(200, 250, "Press [2] to add an extra tower", color=(0, 0.7, 1))
+                draw_text(200, 300, "Press [1] to increase base castle health by 100", color=(0, 1, 0))
+                draw_text(200, 250, "Press [2] to add an archer tower inside the region", color=(0, 0.7, 1))
+                draw_text(200, 200, "A new wave of invaders are coming and they are faster!!!", color=(1, 0, 0))
             else:
-                draw_text(250, 400, f"Round {current_round-1} Completed!", color=(1, 1, 0))
-                draw_text(200, 300, "Press [1] or [2] to continue", color=(0, 1, 0))
+                draw_text(200, 400, f"Round {current_round-1} Completed! Max health increased by 100", color=(1, 1, 0))
+                draw_text(200, 300, "Press [1] to continue", color=(0, 1, 0))
+                draw_text(200, 250, "A new wave of invaders are coming and they are faster!!!", color=(1, 0, 0))
     elif not game_end:
         draw_text(10, 650 - 25, f"Castle Health: {player_health}/{player_max_health}", color=(0, 0, 0))
-        draw_text(10, 650 - 55, f"Score: {player_score}")
-        draw_text(10, 650 - 85, f"Misses: {misses}")
+        draw_text(10, 650 - 55, f"Player Score: {player_score}")
+        draw_text(10, 650 - 85, f"Shots Missed: {misses}")
         draw_text(350, 625, f"Round {current_round}", color=(0, 0, 0))
         remaining = kills_to_advance - enemies_killed
         color = (1, 0, 0) if remaining > 5 else (1, 0.5, 0) if remaining > 2 else (0, 1, 0)
