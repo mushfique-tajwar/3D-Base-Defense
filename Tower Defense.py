@@ -14,6 +14,7 @@ import random
 GRID_LENGTH       = 1500
 region            = 600
 castle_region     = 250
+
 # Camera
 camera_position   = (0, 600, 600)
 camera_angle      = 0
@@ -21,6 +22,7 @@ camera_distance   = 600
 camera_height     = 550
 camera_min_height = 400
 camera_max_height = 1400
+
 # Flags
 cheat             = False
 v_enable          = False
@@ -28,6 +30,7 @@ game_end          = False
 round_pause       = False
 round_choice_made = False
 first_person_view = False
+
 # Player
 player_position   = [0, 0, 0]
 player_speed      = 10
@@ -35,12 +38,14 @@ player_score      = 0
 player_health     = 100
 player_rotation   = 5
 player_max_health = 100
+
 # Gun
 gun_rotation      = 180
 gun_position      = [30, 15, 80]
 shots             = []
 misses            = 0
 max_miss          = 50
+
 # Target
 targets           = []
 target_number     = 5
@@ -48,11 +53,13 @@ target_speed      = 0.025
 target_pulse      = 1.0
 target_pulse_t    = 0
 enemy_count_per_round = [5, 7, 9, 11, 13, 15, 17, 19, 21]
+
 # Enemy shots
 enemy_shots       = []
 enemy_shot_timer  = {}
 enemy_shot_damage = 1
 enemy_shot_cooldown = 300
+
 # Tower shots
 towers            = []
 tower_shots       = []
@@ -703,15 +710,18 @@ def next_round():
 def reset_game():
     global game_end, first_person_view, cheat, v_enable, misses, region, towers, target_speed, current_round
     global player_health, player_max_health, player_score, player_position, gun_rotation, castle_radius
-    global tower_shots, tower_shot_timers, round_pause, round_choice_made
+    global tower_shots, tower_shot_timers, round_pause, round_choice_made, kills_to_advance, enemies_killed
     game_end, first_person_view = False, False
     cheat, v_enable, round_pause, round_choice_made = False, False, False, False
     player_position = [0, 0, 0]
     towers = []
     region = 600
+    player_max_health = 100
     target_speed = 0.025
     current_round = 1
+    enemies_killed = 0
     castle_radius = 60
+    kills_to_advance  = 10
     gun_rotation, player_health, player_max_health, player_score, misses = 180, 100, 100, 0, 0
     shots.clear()
     targets.clear()
@@ -762,8 +772,8 @@ def keyboardListener(key, x, y):
                 return
             tower_placement_mode = True
             placement_marker_position = [400, 400]
-            first_person_view = not first_person_view
-            v_enable = first_person_view
+            first_person_view = False
+            v_enable = False
             player_rotation = 2.5 if first_person_view else 5
             camera_position, camera_angle = (0, 600, 600), 0
             return
@@ -834,6 +844,7 @@ def setupCamera():
         y = camera_distance * math.cos(angle)
         z = camera_height
         gluLookAt(x, y, z, 0, 0, 0, 0, 0, 1)
+        
 def idle():
     global player_score
     enemy_pulse()
